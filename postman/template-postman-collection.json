@@ -1,0 +1,320 @@
+{
+  "info": {
+    "name": "Spring Boot Base Template API",
+    "description": "BMOA 기반 Spring Boot 템플릿 프로젝트 API 컬렉션\n\n## 자동화 기능\n- 로그인 시 자동으로 JWT 토큰 저장\n- 토큰 만료 시 자동 재로그인\n- 모든 인증 필요 API에 자동 토큰 첨부",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_postman_id": "44751e9b-e1f5-47cf-b6d3-91c255f954e0"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{access_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "exec": [
+          "// JWT 토큰 만료 체크 함수",
+          "function isTokenExpired(token) {",
+          "    if (!token) return true;",
+          "    try {",
+          "        const payload = JSON.parse(atob(token.split('.')[1]));",
+          "        const currentTime = Math.floor(Date.now() / 1000);",
+          "        return payload.exp < currentTime;",
+          "    } catch (e) {",
+          "        return true;",
+          "    }",
+          "}",
+          "",
+          "// 현재 토큰 확인",
+          "const currentToken = pm.environment.get('access_token');",
+          "",
+          "if (!currentToken || isTokenExpired(currentToken)) {",
+          "    console.log('🔄 토큰이 없거나 만료됨. 자동 로그인 시도...');",
+          "    ",
+          "    // 자동 로그인 요청",
+          "    const loginRequest = {",
+          "        url: pm.environment.get('base_url') + '/auth/login',",
+          "        method: 'POST',",
+          "        header: {",
+          "            'Content-Type': 'application/json'",
+          "        },",
+          "        body: {",
+          "            mode: 'raw',",
+          "            raw: JSON.stringify({",
+          "                email: pm.environment.get('test_email') || 'test@template.com',",
+          "                password: pm.environment.get('test_password') || 'test1234'",
+          "            })",
+          "        }",
+          "    };",
+          "    ",
+          "    pm.sendRequest(loginRequest, function (err, response) {",
+          "        if (err) {",
+          "            console.error('❌ 자동 로그인 실패:', err);",
+          "            return;",
+          "        }",
+          "        ",
+          "        if (response.code === 200) {",
+          "            try {",
+          "                const jsonData = response.json();",
+          "                if (jsonData.success && jsonData.data && jsonData.data.accessToken) {",
+          "                    pm.environment.set('access_token', jsonData.data.accessToken);",
+          "                    if (jsonData.data.refreshToken) {",
+          "                        pm.environment.set('refresh_token', jsonData.data.refreshToken);",
+          "                    }",
+          "                    console.log('✅ 자동 로그인 성공');",
+          "                } else {",
+          "                    console.error('❌ 로그인 응답 형식 오류');",
+          "                }",
+          "            } catch (e) {",
+          "                console.error('❌ 로그인 응답 파싱 오류:', e);",
+          "            }",
+          "        } else {",
+          "            console.error('❌ 로그인 실패. 상태코드:', response.code);",
+          "        }",
+          "    });",
+          "} else {",
+          "    console.log('✅ 기존 JWT 토큰 사용 중');",
+          "}"
+        ],
+        "type": "text/javascript"
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "🔐 인증 관리",
+      "item": [
+        {
+          "name": "회원가입",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"test@template.com\",\n  \"password\": \"test1234\",\n  \"name\": \"\\ud14c\\uc2a4\\ud2b8 \\uc0ac\\uc6a9\\uc790\",\n  \"role\": \"USER\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/register",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            },
+            "description": "새로운 사용자 계정을 생성합니다."
+          }
+        },
+        {
+          "name": "로그인",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// 응답 상태 코드 체크",
+                  "pm.test('응답 상태 코드가 200인지 확인', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "// 응답 데이터 파싱",
+                  "if (pm.response.code === 200) {",
+                  "    try {",
+                  "        const jsonData = pm.response.json();",
+                  "        ",
+                  "        // CommonResponse 구조 확인",
+                  "        if (jsonData.success && jsonData.data) {",
+                  "            const loginData = jsonData.data;",
+                  "            ",
+                  "            // access_token 저장",
+                  "            if (loginData.accessToken) {",
+                  "                pm.environment.set('access_token', loginData.accessToken);",
+                  "                console.log('✅ Access Token 저장됨');",
+                  "            }",
+                  "            ",
+                  "            // refresh_token 저장",
+                  "            if (loginData.refreshToken) {",
+                  "                pm.environment.set('refresh_token', loginData.refreshToken);",
+                  "                console.log('✅ Refresh Token 저장됨');",
+                  "            }",
+                  "        }",
+                  "    } catch (e) {",
+                  "        console.error('❌ 응답 파싱 중 오류:', e);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{test_email}}\",\n  \"password\": \"{{test_password}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "이메일과 비밀번호로 로그인하여 JWT 토큰을 발급받습니다."
+          }
+        },
+        {
+          "name": "토큰 갱신",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refresh_token}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/refresh",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "refresh"
+              ]
+            },
+            "description": "Refresh Token을 사용하여 새로운 Access Token을 발급받습니다."
+          }
+        }
+      ]
+    },
+    {
+      "name": "👤 사용자 관리",
+      "item": [
+        {
+          "name": "내 정보 조회",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/user/me",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "user",
+                "me"
+              ]
+            },
+            "description": "현재 로그인한 사용자의 정보를 조회합니다."
+          }
+        },
+        {
+          "name": "내 정보 수정",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"\\uc218\\uc815\\ub41c \\uc774\\ub984\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/user/me",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "user",
+                "me"
+              ]
+            },
+            "description": "현재 로그인한 사용자의 정보를 수정합니다."
+          }
+        }
+      ]
+    },
+    {
+      "name": "🏥 헬스체크",
+      "item": [
+        {
+          "name": "서버 상태 확인",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "health"
+              ]
+            },
+            "description": "서버의 상태를 확인합니다. (인증 불필요)"
+          }
+        },
+        {
+          "name": "Actuator Health",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/actuator/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "actuator",
+                "health"
+              ]
+            },
+            "description": "Spring Boot Actuator 헬스체크를 확인합니다."
+          }
+        }
+      ]
+    }
+  ]
+}

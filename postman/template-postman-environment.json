@@ -1,0 +1,49 @@
+{
+  "environment": {
+    "name": "Spring Boot Base Template",
+    "values": [
+      {
+        "key": "base_url",
+        "value": "http://localhost:8080/api/v1",
+        "enabled": true,
+        "type": "default",
+        "description": "템플릿 API 베이스 URL"
+      },
+      {
+        "key": "baseUrl",
+        "value": "http://localhost:8080",
+        "enabled": true,
+        "type": "default",
+        "description": "서버 베이스 URL"
+      },
+      {
+        "key": "access_token",
+        "value": "",
+        "enabled": true,
+        "type": "secret",
+        "description": "JWT Access Token (자동 설정됨)"
+      },
+      {
+        "key": "refresh_token",
+        "value": "",
+        "enabled": true,
+        "type": "secret",
+        "description": "JWT Refresh Token (자동 설정됨)"
+      },
+      {
+        "key": "test_email",
+        "value": "test@template.com",
+        "enabled": true,
+        "type": "default",
+        "description": "테스트용 이메일"
+      },
+      {
+        "key": "test_password",
+        "value": "test1234",
+        "enabled": true,
+        "type": "secret",
+        "description": "테스트용 비밀번호"
+      }
+    ]
+  }
+}
