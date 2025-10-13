@@ -13,6 +13,7 @@ import com.template.base.application.service.AuthService
 import com.template.base.application.service.auth.CommonAuthService
 import com.template.base.presentation.dto.common.CommonResponse
 import com.template.base.presentation.dto.request.LoginRequest
+import com.template.base.presentation.dto.request.LogoutRequest
 import com.template.base.presentation.dto.request.RefreshTokenRequest
 import com.template.base.presentation.dto.request.RegisterRequest
 import com.template.base.presentation.dto.response.LoginResponse
@@ -67,5 +68,19 @@ class AuthController(
 
         logger.info("Access Token 갱신 완료 - 새로운 Access Token 발급됨")
         return ResponseEntity.ok(CommonResponse(data = response))
+    }
+
+    /**
+     * 로그아웃 API (토큰 무효화)
+     */
+    @PostMapping("/logout")
+    @Operation(summary = "로그아웃", description = "Refresh Token을 무효화하여 로그아웃합니다")
+    fun logout(@Valid @RequestBody request: LogoutRequest): ResponseEntity<CommonResponse<String>> {
+        logger.info("로그아웃 요청 - Refresh Token: {}", request.refreshToken)
+
+        commonAuthService.logout(request)
+
+        logger.info("로그아웃 완료 - Refresh Token 무효화됨")
+        return ResponseEntity.ok(CommonResponse(data = "로그아웃이 완료되었습니다."))
     }
 }

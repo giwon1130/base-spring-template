@@ -4,6 +4,7 @@ import mu.KotlinLogging
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import com.template.base.presentation.dto.request.LoginRequest
+import com.template.base.presentation.dto.request.LogoutRequest
 import com.template.base.presentation.dto.request.RefreshTokenRequest
 import com.template.base.application.mapper.UserMapper
 import com.template.base.domain.repository.UserRepository
@@ -57,5 +58,13 @@ class CommonAuthService(
             accessToken = newAccessToken,
             refreshToken = newRefreshToken
         )
+    }
+
+    fun logout(request: LogoutRequest) {
+        logger.info("로그아웃 요청 - Refresh Token: {}", request.refreshToken)
+
+        refreshTokenService.revokeRefreshToken(request.refreshToken)
+
+        logger.info("로그아웃 완료 - Refresh Token 무효화됨")
     }
 }

@@ -17,6 +17,8 @@ enum class ErrorCode(val httpStatus: HttpStatus, val code: String, val defaultMe
 
     ENTITY_NOT_FOUND(HttpStatus.NOT_FOUND, "ENTITY_NOT_FOUND", "요청한 리소스를 찾을 수 없습니다."),
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "USER_NOT_FOUND", "해당 사용자를 찾을 수 없습니다."),
+    USER_ALREADY_DELETED(HttpStatus.BAD_REQUEST, "USER_ALREADY_DELETED", "이미 비활성화된 사용자입니다."),
+    USER_ALREADY_ACTIVE(HttpStatus.BAD_REQUEST, "USER_ALREADY_ACTIVE", "이미 활성화된 사용자입니다."),
 
     MISSING_ACCESS_TOKEN(HttpStatus.UNAUTHORIZED, "MISSING_ACCESS_TOKEN", "Access Token이 누락되었습니다."),
 

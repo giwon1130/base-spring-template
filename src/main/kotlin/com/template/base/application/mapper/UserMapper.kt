@@ -36,6 +36,17 @@ class UserMapper {
     }
 
     /**
+     * User 엔티티 → User 응답 DTO 변환 (관리자용 - AdminService에서 사용)
+     */
+    fun toUserResponse(user: User): UserResponse {
+        return UserResponse(
+            email = user.email,
+            name = user.name,
+            role = user.role
+        )
+    }
+
+    /**
      * User 엔티티 → UserDto 변환 (인증용)
      */
     fun toDto(user: User): UserDto {

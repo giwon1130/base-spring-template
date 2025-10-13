@@ -88,6 +88,21 @@ class RefreshTokenService(
     }
 
     /**
+     * Refresh Token 무효화 (로그아웃 시 사용)
+     */
+    fun revokeRefreshToken(refreshToken: String) {
+        logger.info("Refresh Token 무효화 요청 - refreshToken: {}", refreshToken)
+
+        val removed = refreshTokenStore.remove(refreshToken)
+        if (removed != null) {
+            logger.info("Refresh Token 무효화 완료 - refreshToken: {}", refreshToken)
+        } else {
+            logger.warn("무효화할 Refresh Token을 찾을 수 없음 - refreshToken: {}", refreshToken)
+            throw CustomException(ErrorCode.INVALID_REFRESH_TOKEN)
+        }
+    }
+
+    /**
      * 만료된 토큰 정리 (스케줄링 등으로 주기적 실행 권장)
      */
     fun cleanupExpiredTokens() {
