@@ -6,6 +6,7 @@ plugins {
     kotlin("jvm") version "1.9.21"
     kotlin("plugin.spring") version "1.9.21"
     kotlin("plugin.jpa") version "1.9.21"
+    kotlin("kapt") version "1.9.21"
 }
 
 group = "com.template"
@@ -43,6 +44,10 @@ dependencies {
     
     // Kafka
     implementation("org.springframework.kafka:spring-kafka")
+
+    // QueryDSL
+    implementation("com.querydsl:querydsl-jpa:5.0.0:jakarta")
+    kapt("com.querydsl:querydsl-apt:5.0.0:jakarta")
     
     // Redis
     implementation("org.springframework.boot:spring-boot-starter-data-redis-reactive")
@@ -85,6 +90,22 @@ tasks.withType<KotlinCompile> {
         jvmTarget = "17"
     }
 }
+
+kapt {
+    arguments {
+        arg("querydsl.entityAccessors", "true")
+        arg("querydsl.createDefaultVariable", "false")
+    }
+    correctErrorTypes = true
+}
+
+sourceSets {
+    val main by getting
+    main.kotlin.srcDir("build/generated/source/kapt/main")
+}
+
+tasks.matching { it.name == "kaptTestKotlin" || it.name == "kaptGenerateStubsTestKotlin" }
+    .configureEach { enabled = false }
 
 tasks.withType<Test> {
     useJUnitPlatform()

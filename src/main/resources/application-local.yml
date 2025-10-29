@@ -10,3 +10,10 @@ spring:
       host: localhost
       port: 6380
       database: 0
+
+# Local 개발환경에서는 더 자세한 로깅
+logging:
+  level:
+    com.template.platform: DEBUG
+    org.springframework.security: DEBUG
+    org.springframework.cache: DEBUG

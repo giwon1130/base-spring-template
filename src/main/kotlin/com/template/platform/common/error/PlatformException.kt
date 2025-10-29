@@ -33,3 +33,11 @@ class CustomException(
     message: String? = null,
     cause: Throwable? = null
 ) : PlatformException(errorCode, message, cause)
+
+/**
+ * 엔티티를 찾을 수 없을 때 발생하는 예외
+ */
+class EntityNotFoundException(
+    message: String,
+    cause: Throwable? = null
+) : PlatformException(ErrorCode.ENTITY_NOT_FOUND, message, cause)

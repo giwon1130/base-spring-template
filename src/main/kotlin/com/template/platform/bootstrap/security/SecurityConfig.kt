@@ -33,6 +33,8 @@ class SecurityConfig(
             .authorizeHttpRequests { auth ->
                 auth
                     .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                    // Swagger/OpenAPI endpoints (must be before /api/** matcher)
+                    .requestMatchers("/v3/api-docs/**", "/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                     .requestMatchers("/api/v1/auth/**").permitAll()
                     .requestMatchers("/api/v1/errors").permitAll()
                     .requestMatchers("/api/v1/label-render/**").permitAll()
@@ -40,7 +42,6 @@ class SecurityConfig(
                     .requestMatchers(HttpMethod.GET, "/api/v1/scenes/change-detections/*/download").permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/v1/scenes/change-detections/*/labels/download").permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/v1/reports/download-secure").permitAll()
-                    .requestMatchers("/v3/api-docs/**", "/swagger-ui/**").permitAll()
                     // Actuator endpoints for monitoring and health checks
                     .requestMatchers("/actuator/**").permitAll()
                     // Test endpoints for development

@@ -6,6 +6,7 @@ BMOA 프로젝트에서 공통으로 사용하던 인프라 코드를 추려낸 
 
 - **인증 & 보안**: Spring Security + JWT (Access/Refresh), Refresh Token Redis 보관
 - **사용자 관리**: 회원가입/로그인/내 정보 수정 API, Auditing 포함
+- **Scene & AOI 기본 관리**: Scene/AOI CRUD + 필터/검색, SRID 4326 Polygon 지원
 - **SSE 알림 골격**: Redis Pub/Sub, Scene/Inference 알림 발행 서비스, 테스트용 엔드포인트
 - **Redis 캐시 인프라**: 캐시 이름 상수, 분산 무효화 메시지 발행
 - **공통 인프라**: 전역 예외 처리, 표준 응답, Docker Compose(Postgres + Redis), Flyway 마이그레이션
@@ -58,6 +59,16 @@ docker compose up -d db redis
 docker compose down
 ```
 
+## 🔧 환경 변수 (env.yml 참고)
+
+| Key | 설명 | 템플릿 기본값 |
+|-----|------|---------------|
+| `SCENE_PRESIGNED_SECRET` | Scene/Label 다운로드 URL 서명 비밀키 | `scene-presigned-secret` |
+| `SCENE_PRESIGNED_EXPIRES` | Presigned URL 만료 시간(초) | `600` |
+| `SCENE_DOWNLOAD_URL_PREFIX` | Scene 다운로드 기본 경로 | `/api/v1/scenes/change-detections` |
+| `LABEL_DOWNLOAD_SECRET` | Label 다운로드 비밀키 (없으면 Scene과 동일) | `scene-presigned-secret` |
+| `LABEL_DOWNLOAD_URL_PREFIX` | Label 다운로드 기본 경로 | `/api/v1/scenes/change-detections` |
+
 ## 주요 API 엔드포인트
 
 ### 인증 API
@@ -78,6 +89,29 @@ docker compose down
 |--------|------|------|----------|
 | GET | `/api/v1/notifications/stream/{email}` | SSE 구독 | ❌ |
 | POST | `/api/v1/notifications/test/send` | 테스트 알림 발행 | ❌ |
+
+### Scene API
+| Method | Path | 설명 | 인증 필요 |
+|--------|------|------|----------|
+| GET | `/api/v1/scenes` | Scene 목록 조회 (키워드/기간/상태 필터) | ✅ |
+| GET | `/api/v1/scenes/{sceneId}` | Scene 상세 조회 | ✅ |
+| POST | `/api/v1/scenes` | Scene 등록 | ✅ |
+| PUT | `/api/v1/scenes/{sceneId}` | Scene 수정 | ✅ |
+| DELETE | `/api/v1/scenes/{sceneId}` | Scene 소프트 삭제 | ✅ |
+| GET | `/api/v1/scenes/count` | 기간 내 Scene 개수 조회 | ✅ |
+| GET | `/api/v1/scenes/change-detections/{changeDetectionId}/download-url` | Scene 파일 presigned URL 발급 | ✅ |
+| GET | `/api/v1/scenes/change-detections/{changeDetectionId}/download` | Scene 파일 다운로드 (presigned) | ✅ |
+| GET | `/api/v1/scenes/change-detections/{changeDetectionId}/labels/download-url` | Label GeoJSON presigned URL 발급 | ✅ |
+| GET | `/api/v1/scenes/change-detections/{changeDetectionId}/labels/download` | Label GeoJSON 다운로드 (presigned) | ✅ |
+
+### AOI API
+| Method | Path | 설명 | 인증 필요 |
+|--------|------|------|----------|
+| GET | `/api/v1/aois` | AOI 목록 조회 (코드명 검색) | ✅ |
+| GET | `/api/v1/aois/{aoiId}` | AOI 상세 조회 | ✅ |
+| POST | `/api/v1/aois` | AOI 등록 | ✅ |
+| PUT | `/api/v1/aois/{aoiId}` | AOI 수정 | ✅ |
+| DELETE | `/api/v1/aois/{aoiId}` | AOI 소프트 삭제 | ✅ |
 
 ### 모니터링
 | Method | Path | 설명 | 인증 필요 |
@@ -139,9 +173,16 @@ curl -X POST http://localhost:8080/api/v1/auth/refresh \
 ## 테스트 실행
 
 ### 통합 테스트
-실제 Postgres/Redis를 사용해 Flyway `clean → migrate` 후 회원가입 로직을 검사합니다.
+실제 Postgres/Redis를 사용해 Flyway `clean → migrate` 후 아래 시나리오를 검증합니다.
 ```bash
+# 사용자 등록/로그인 흐름
 SPRING_PROFILES_ACTIVE=local ./gradlew test --tests com.template.platform.features.user.AuthServiceIntegrationTest
+
+# Scene CRUD + 필터링 + Soft Delete
+SPRING_PROFILES_ACTIVE=local ./gradlew test --tests com.template.platform.features.scene.SceneServiceIntegrationTest
+
+# AOI CRUD + 검색
+SPRING_PROFILES_ACTIVE=local ./gradlew test --tests com.template.platform.features.aoi.AoiServiceIntegrationTest
 ```
 
 ### 전체 테스트
