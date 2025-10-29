@@ -6,6 +6,7 @@ import com.template.platform.common.sse.SseManager
 import com.template.platform.features.notification.application.NotificationService
 import com.template.platform.features.notification.application.PageResponse
 import com.template.platform.features.notification.domain.NotificationDto
+import com.template.platform.features.notification.domain.NotificationStatus
 import com.template.platform.features.notification.domain.NotificationType
 import mu.KotlinLogging
 import org.springframework.data.domain.Pageable
@@ -90,11 +91,13 @@ class NotificationController(
         val notification = NotificationDto(
             id = UUID.randomUUID().toString(),
             userEmail = userEmail,
+            status = NotificationStatus.UNKNOWN,
+            description = message,
             title = "테스트 알림",
             message = message,
             type = NotificationType.valueOf(type)
         )
-        
+
         redisNotificationPublisher.publish(notification)
         return CommonResponse.success(data = "Test notification sent to user: $userEmail")
     }

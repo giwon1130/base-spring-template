@@ -1,4 +1,3 @@
-version: "3.8"
 services:
   db:
     image: postgis/postgis:15-3.5
@@ -18,7 +17,7 @@ services:
     platform: linux/amd64  # ARM64 시스템에서 AMD64 이미지 사용
     restart: always
     ports:
-      - "6379:6379"
+      - "6380:6379"
     volumes:
       - template_redis_data:/data
     command: redis-server --appendonly yes

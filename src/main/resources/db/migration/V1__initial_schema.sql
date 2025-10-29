@@ -38,17 +38,3 @@ CREATE INDEX idx_changeset_type ON changesets(change_type);
 
 -- Spatial index for geometry column
 CREATE INDEX idx_changeset_geometry ON changesets USING GIST(geometry);
-
--- Insert sample data
-INSERT INTO changesets (title, description, change_type, geometry, created_by, metadata) VALUES
-('Seoul Area Update', 'Updated road network in Seoul downtown', 'FEATURE_MODIFIED', 
- ST_GeomFromText('POLYGON((126.9 37.4, 127.1 37.4, 127.1 37.6, 126.9 37.6, 126.9 37.4))', 4326),
- 'system', '{"source": "osm", "confidence": 0.95}'),
- 
-('Busan Port Changes', 'New container terminal added', 'FEATURE_ADDED',
- ST_GeomFromText('POLYGON((129.0 35.0, 129.2 35.0, 129.2 35.2, 129.0 35.2, 129.0 35.0))', 4326),
- 'admin', '{"source": "satellite", "confidence": 0.88}'),
- 
-('Jeju Island Config', 'Updated tourism facility data', 'DATA_UPDATED',
- ST_GeomFromText('POLYGON((126.1 33.1, 126.9 33.1, 126.9 33.6, 126.1 33.6, 126.1 33.1))', 4326),
- 'operator', '{"facilities": ["hotel", "restaurant"], "updated_count": 42}');

@@ -1,86 +1,49 @@
 # Spring Boot Base Template
 
-BMOA 프로젝트에서 추출한 공통 기능들을 포함하는 Spring Boot 기본 템플릿입니다.
+BMOA 프로젝트에서 공통으로 사용하던 인프라 코드를 추려낸 Spring Boot 템플릿입니다. 인증/사용자/SSE/Redis 캐시 등 “플랫폼 공통 기능”까지만 포함하며, 비즈니스 도메인은 이후에 자유롭게 추가할 수 있도록 비워두었습니다.
 
-## 🚀 포함 기능
+## 🚀 현재 포함 기능
 
-### ✅ 인증/인가 시스템
-- JWT 기반 Access Token + Refresh Token 관리
-- Spring Security 설정
-- 사용자 회원가입/로그인/로그아웃 API
-- 토큰 갱신 (Refresh Token Rotation)
-- 역할 기반 접근 제어 (USER/ADMIN)
+- **인증 & 보안**: Spring Security + JWT (Access/Refresh), Refresh Token Redis 보관
+- **사용자 관리**: 회원가입/로그인/내 정보 수정 API, Auditing 포함
+- **SSE 알림 골격**: Redis Pub/Sub, Scene/Inference 알림 발행 서비스, 테스트용 엔드포인트
+- **Redis 캐시 인프라**: 캐시 이름 상수, 분산 무효화 메시지 발행
+- **공통 인프라**: 전역 예외 처리, 표준 응답, Docker Compose(Postgres + Redis), Flyway 마이그레이션
 
-### ✅ 사용자 관리
-- 사용자 CRUD 기능
-- 비밀번호 변경 기능
-- 소프트 삭제 지원 (BaseEntity)
-- 생성/수정 시간 및 생성자/수정자 추적
+## 🧱 기술 스택
 
-### ✅ 관리자 기능
-- 사용자 목록 조회 (페이지네이션)
-- 사용자 검색 기능
-- 사용자 계정 활성화/비활성화
-- 관리자용 사용자 정보 수정
+| 항목 | 버전/구성 |
+|------|-----------|
+| Kotlin | 1.9.x |
+| Spring Boot | 3.2.1 |
+| Java | 17 |
+| DB | PostgreSQL (PostGIS) |
+| Cache | Redis |
+| 빌드 | Gradle Kotlin DSL |
+| 데이터베이스 마이그레이션 | Flyway |
 
-### ✅ 인프라 설정
-- PostgreSQL + Redis 연동
-- Flyway 마이그레이션
-- QueryDSL 설정
-- Docker Compose 환경
+## ⚙️ 빠른 시작
 
-### ✅ 공통 기능
-- 전역 예외 처리
-- 표준화된 API 응답 포맷 (`CommonResponse`)
-- 페이지네이션 유틸리티 (`PageRequest`, `PageResponse`)
-- 요청 검증 (Bean Validation)
-- 상세한 로깅 및 트레이싱
-
-### ✅ 개발 지원
-- Swagger API 문서화
-- CORS 설정
-- 환경별 설정 (dev/prod)
-- 테스트 환경 (TestContainers)
-
-## 🛠️ 기술 스택
-
-- **Language**: Kotlin 1.9.25
-- **Framework**: Spring Boot 3.3.6
-- **Database**: PostgreSQL + Redis
-- **Security**: Spring Security + JWT
-- **Documentation**: SpringDoc OpenAPI 3
-- **Build**: Gradle 8.x
-- **Java**: 21
-
-## 📋 사용법
+### 0. 요구 사항
+- Docker & Docker Compose
+- JDK 17 (예: Amazon Corretto 17)
 
 ### 1. 프로젝트 클론
 ```bash
-git clone https://github.com/giwon1130/spring-boot-base-template.git
+git clone <repo-url>
 cd spring-boot-base-template
 ```
 
-### 2. 환경 설정
+### 2. 인프라 서비스 기동
+`docker-compose.yml`만으로 Postgres/Redis가 올라가며, 포트는 각각 `35432`, `6380` 입니다.
 ```bash
-# 환경 변수 파일 생성
-cp .env.example .env
-
-# .env 파일에서 필요한 값들 수정
-DB_HOST=localhost
-DB_PORT=5432
-DB_NAME=templatedb
-DB_USERNAME=postgres
-DB_PASSWORD=postgres
-
-REDIS_HOST=localhost
-REDIS_PORT=6379
-
-JWT_SECRET=your-base64-encoded-secret-key
+docker compose up -d db redis
 ```
 
-### 3. Docker 환경 시작
+### 3. 통합 테스트 (선택)
+실제 Postgres/Redis를 사용해 Flyway `clean → migrate` 후 회원가입 로직을 검사합니다.
 ```bash
-docker-compose up -d
+SPRING_PROFILES_ACTIVE=local ./gradlew test --tests com.template.platform.features.user.AuthServiceIntegrationTest
 ```
 
 ### 4. 애플리케이션 실행
@@ -88,231 +51,65 @@ docker-compose up -d
 ./gradlew bootRun
 ```
 
-### 5. API 문서 확인
-- Swagger UI: http://localhost:8080/swagger-ui.html
-- API Docs: http://localhost:8080/api-docs
+기본적으로 `local` 프로필이 활성화되며, 다음 환경 변수를 통해 동작을 조정할 수 있습니다.
 
-## 📱 기본 제공 API
+| 변수 | 기본값 | 설명 |
+|------|--------|------|
+| `SPRING_PROFILES_ACTIVE` | `local` | 실행 프로필 |
+| `JWT_SECRET` | 기본 내장 값 | 운영 환경에서는 반드시 교체 |
+| `JWT_EXPIRATION` | `3600000` | Access Token 만료(ms) |
 
-### 인증 API (`/api/v1/auth`)
-- `POST /register` - 회원가입
-- `POST /login` - 로그인 (JWT 토큰 발급)
-- `POST /refresh` - 토큰 갱신 (Refresh Token 사용)
-- `POST /logout` - 로그아웃 (토큰 무효화)
-
-### 사용자 관리 API (`/api/v1/user`) 🔒
-- `GET /me` - 내 정보 조회
-- `PUT /me` - 내 정보 수정
-- `POST /change-password` - 비밀번호 변경
-
-### 관리자 API (`/api/v1/admin`) 🔒👑
-- `GET /users` - 사용자 목록 조회 (페이지네이션)
-- `GET /users/{userId}` - 특정 사용자 정보 조회
-- `PUT /users/{userId}` - 사용자 정보 수정
-- `DELETE /users/{userId}` - 사용자 계정 비활성화
-- `POST /users/{userId}/activate` - 사용자 계정 활성화
-
-### 시스템 API
-- `GET /actuator/health` - 헬스체크
-
-> 🔒 = 인증 필요, 👑 = 관리자 권한 필요
-
-## 🔧 커스터마이징
-
-### 1. 프로젝트 이름 변경
-```kotlin
-// settings.gradle.kts
-rootProject.name = "your-project-name"
-
-// 패키지명 변경
-com.template.base → com.yourcompany.project
-```
-
-### 2. 새로운 엔티티 추가
-```kotlin
-// 1. domain/model/에 엔티티 생성
-@Entity
-@Table(name = "your_entity")
-class YourEntity : BaseEntity()
-
-// 2. domain/repository/에 리포지토리 생성
-interface YourEntityRepository : JpaRepository<YourEntity, Long>
-
-// 3. Flyway 마이그레이션 파일 추가
-// src/main/resources/db/migration/V2__create_your_entity_table.sql
-```
-
-### 3. 새로운 API 추가
-```kotlin
-// 1. presentation/controller/에 컨트롤러 생성
-@RestController
-@RequestMapping("/api/v1/your-entity")
-@SecurityRequirement(name = "bearerAuth") // JWT 인증 필요 시
-class YourEntityController
-
-// 2. application/service/에 서비스 생성
-@Service
-@Transactional
-class YourEntityService
-
-// 3. DTO 클래스들 생성
-// presentation/dto/request/, response/
-// 페이지네이션이 필요한 경우 PageRequest, PageResponse 사용
-```
-
-## 🧪 테스트
-
+### 5. 종료
 ```bash
-# 전체 테스트 실행
-./gradlew test
-
-# 특정 테스트 실행
-./gradlew test --tests "com.template.base.*"
+docker compose down
 ```
 
-## 📦 패키지 구조
+## 📡 주요 엔드포인트
 
-```
-src/main/kotlin/com/template/base/
-├── BaseTemplateApplication.kt
-├── application/
-│   ├── dto/                    # 애플리케이션 레이어 DTO
-│   ├── mapper/                 # 엔티티-DTO 매퍼
-│   └── service/                # 비즈니스 로직
-│       ├── AdminService.kt     # 관리자 기능
-│       ├── AuthService.kt      # 회원가입
-│       ├── UserService.kt      # 사용자 관리
-│       └── auth/              # 인증 관련 서비스
-├── domain/
-│   ├── model/                  # 엔티티
-│   │   ├── common/            # 공통 베이스 엔티티
-│   │   └── User.kt
-│   └── repository/            # 리포지토리
-├── infrastructure/
-│   ├── config/                # 설정 클래스들
-│   │   ├── SecurityConfig.kt
-│   │   ├── RedisConfig.kt
-│   │   └── SwaggerConfig.kt
-│   └── security/              # 보안 관련
-│       ├── JwtUtil.kt
-│       └── exception/
-└── presentation/
-    ├── controller/            # REST 컨트롤러
-    │   ├── AdminController.kt  # 관리자 API
-    │   ├── AuthController.kt   # 인증 API
-    │   ├── HealthController.kt # 헬스체크
-    │   └── UserController.kt   # 사용자 API
-    └── dto/                   # API 요청/응답 DTO
-        ├── request/           # 요청 DTO
-        ├── response/          # 응답 DTO
-        └── common/            # 공통 DTO (페이지네이션 등)
-```
+| Method | Path | 설명 |
+|--------|------|------|
+| POST | `/api/v1/auth/register` | 회원가입 |
+| POST | `/api/v1/auth/login` | 로그인 (JWT 발급) |
+| POST | `/api/v1/auth/refresh` | Access Token 갱신 |
+| GET | `/api/v1/user/me` | 내 정보 조회 (인증 필요) |
+| PUT | `/api/v1/user/me` | 내 정보 수정 (인증 필요) |
+| GET | `/api/v1/notifications/stream/{email}` | SSE 구독 |
+| POST | `/api/v1/notifications/test/send` | 테스트 알림 발행 |
 
-## 🐳 Docker
+Swagger는 아직 포함되어 있지 않으니 필요 시 직접 추가하세요.
 
-```bash
-# 개발 환경 (PostgreSQL + Redis)
-docker-compose up -d
+## 🗄️ Flyway 마이그레이션
 
-# 전체 빌드 및 실행
-docker-compose -f docker-compose.prod.yml up --build
-```
+| 파일 | 내용 |
+|------|------|
+| `V1__initial_schema.sql` | PostGIS 확장, Outbox/Changeset 기본 테이블 |
+| `V2__create_users_table.sql` | 사용자 테이블 및 감사 컬럼 |
 
-## 💡 사용 예제
+## 🧪 테스트 전략
 
-### 1. 회원가입 및 로그인
-```bash
-# 회원가입
-curl -X POST http://localhost:8080/api/v1/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "user@example.com",
-    "password": "password123",
-    "name": "홍길동",
-    "role": "USER"
-  }'
+- **통합 테스트**: `AuthServiceIntegrationTest`는 Docker로 띄운 Postgres/Redis(6380)에 대해 Flyway 마이그레이션 후 회원가입 로직을 검증합니다.
+- 새 도메인을 이식할 때도 동일한 방식으로 테스트를 추가하면 실제 환경과 거의 동일하게 검증할 수 있습니다.
 
-# 로그인
-curl -X POST http://localhost:8080/api/v1/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "user@example.com",
-    "password": "password123"
-  }'
-```
+## 🔧 커스터마이징 팁
 
-### 2. 인증이 필요한 API 호출
-```bash
-# 내 정보 조회
-curl -X GET http://localhost:8080/api/v1/user/me \
-  -H "Authorization: Bearer {access_token}"
+1. **패키지/프로젝트 이름 변경**
+   ```kotlin
+   // settings.gradle.kts
+   rootProject.name = "your-project-name"
+   ```
+   패키지 이름 `com.template.platform`을 일괄 변경하세요.
 
-# 비밀번호 변경
-curl -X POST http://localhost:8080/api/v1/user/change-password \
-  -H "Authorization: Bearer {access_token}" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "currentPassword": "password123",
-    "newPassword": "newpassword456",
-    "confirmPassword": "newpassword456"
-  }'
-```
+2. **새 엔티티 추가**
+   - `src/main/resources/db/migration/V3__....sql`에 Flyway 스크립트 작성
+   - `BaseEntity`/`BaseTimeEntity`를 상속하면 감사 컬럼이 자동 적용됩니다.
 
-### 3. 관리자 API 사용
-```bash
-# 사용자 목록 조회 (페이지네이션)
-curl -X GET "http://localhost:8080/api/v1/admin/users?page=0&size=20&search=홍길동" \
-  -H "Authorization: Bearer {admin_access_token}"
+3. **SSE 알림 확장**
+   - `NotificationTargetResolver` 구현을 교체하여 대상자 선택 전략을 커스터마이징할 수 있습니다.
 
-# 사용자 계정 비활성화
-curl -X DELETE http://localhost:8080/api/v1/admin/users/1 \
-  -H "Authorization: Bearer {admin_access_token}"
-```
+## 🔭 다음 단계 제안
 
-## 📚 참고 문서
+- Scene / AOI / Change Detection 등 비즈니스 도메인 이식
+- Kafka, 외부 STAC 연동 등 고급 기능
+- API 문서화(Swagger) 및 운영 환경 구성
 
-- [Spring Boot Reference](https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/)
-- [Spring Security Reference](https://docs.spring.io/spring-security/reference/)
-- [JWT 사용 가이드](docs/JWT_GUIDE.md)
-- [API 설계 가이드](docs/API_DESIGN.md)
-
-## 🤝 기여하기
-
-1. Fork the Project
-2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the Branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-## 📄 라이선스
-
-이 프로젝트는 MIT 라이선스 하에 있습니다. 자세한 내용은 `LICENSE` 파일을 참조하세요.
-
-## 📞 문의
-
-- GitHub: [@giwon1130](https://github.com/giwon1130)
-- Email: your-email@example.com
-
-## 🔄 최신 업데이트
-
-### v2.0.0 (2025-10-13)
-- ✅ **관리자 사용자 관리 기능 추가**
-  - 사용자 목록 조회 (페이지네이션, 검색)
-  - 사용자 계정 활성화/비활성화
-  - 관리자용 사용자 정보 수정
-- ✅ **로그아웃 기능 구현**
-  - Refresh Token 무효화
-  - 완전한 세션 종료
-- ✅ **비밀번호 변경 기능**
-  - 현재 비밀번호 검증
-  - 안전한 비밀번호 업데이트
-- ✅ **페이지네이션 유틸리티**
-  - 표준화된 페이지 요청/응답 구조
-  - 정렬 기능 지원
-- ✅ **보안 강화**
-  - 역할 기반 API 접근 제어
-  - JWT 토큰 검증 개선
-
----
-
-**Based on BMOA Project Architecture** - 검증된 아키텍처를 기반으로 한 안정적이고 확장 가능한 템플릿입니다.
+현재 버전은 “공통 인프라 템플릿”으로 고정(fix)하기 적합한 상태입니다. 이후 도메인 마이그레이션을 진행하면서 버전을 올리거나 기능을 추가해 나가세요. 버그 제보나 개선 제안은 언제든 환영합니다.
