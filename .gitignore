@@ -73,3 +73,6 @@ coverage/
 *.swp
 *~.nib
 .tmp/
+
+# AI Assistant Documents
+CLAUDE.md

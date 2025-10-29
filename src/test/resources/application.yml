@@ -22,6 +22,12 @@ spring:
       # TestContainers will override these
       host: localhost
       port: 6370
+      key:
+        refresh-token: "test:auth:refresh:"
+
+jwt:
+  secret: test-secret-key-for-testing-purposes-only-12345
+  expiration: 3600000
 
 logging:
   level:

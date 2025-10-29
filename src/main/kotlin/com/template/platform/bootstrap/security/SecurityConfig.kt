@@ -41,6 +41,11 @@ class SecurityConfig(
                     .requestMatchers(HttpMethod.GET, "/api/v1/scenes/change-detections/*/labels/download").permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/v1/reports/download-secure").permitAll()
                     .requestMatchers("/v3/api-docs/**", "/swagger-ui/**").permitAll()
+                    // Actuator endpoints for monitoring and health checks
+                    .requestMatchers("/actuator/**").permitAll()
+                    // Test endpoints for development
+                    .requestMatchers("/sse/**").permitAll()
+                    .requestMatchers("/api/changes/**").permitAll()
                     .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
                     .requestMatchers("/api/**").authenticated()
                     .anyRequest().permitAll()

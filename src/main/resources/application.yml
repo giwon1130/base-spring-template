@@ -27,7 +27,7 @@ spring:
           max-idle: 8
           min-idle: 0
       key:
-        refresh-token: platform:auth:refresh:
+        refresh-token: "platform:auth:refresh:"
           
   kafka:
     bootstrap-servers: localhost:9092
