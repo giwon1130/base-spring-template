@@ -1,24 +1,29 @@
 spring:
-  main:
-    allow-bean-definition-overriding: true
+  application:
+    name: platform-template-test
+    
   datasource:
+    # TestContainers will override these
     url: jdbc:h2:mem:testdb
-    driver-class-name: org.h2.Driver
     username: sa
-    password: password
-  
+    password: ""
+    driver-class-name: org.h2.Driver
+    
   jpa:
     hibernate:
       ddl-auto: create-drop
     show-sql: true
     
   flyway:
-    enabled: false
-
-jwt:
-  secret: dGVzdC1zZWNyZXQta2V5LWZvci10ZXN0aW5nLXB1cnBvc2Utb25seQ==
-  expiration: 3600000
+    enabled: false  # Use JPA DDL for tests
+    
+  data:
+    redis:
+      # TestContainers will override these
+      host: localhost
+      port: 6370
 
 logging:
   level:
-    com.template.base: DEBUG
+    com.template.platform: DEBUG
+    org.springframework.test: DEBUG

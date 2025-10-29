@@ -1,36 +1,29 @@
 version: "3.8"
-
 services:
   db:
-    image: postgres:15
+    image: postgis/postgis:15-3.5
+    platform: linux/amd64  # ARM64 시스템에서 AMD64 이미지 사용
     restart: always
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: templatedb
+      POSTGRES_DB: template_db
     ports:
-      - "5432:5432"
+      - "35432:5432"
     volumes:
       - template_postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
 
   redis:
-    image: redis:7
+    image: redis:6.2
+    platform: linux/amd64  # ARM64 시스템에서 AMD64 이미지 사용
     restart: always
     ports:
       - "6379:6379"
     volumes:
       - template_redis_data:/data
     command: redis-server --appendonly yes
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+    environment:
+      REDIS_PREFIX: "template:"
 
 volumes:
   template_postgres_data:
