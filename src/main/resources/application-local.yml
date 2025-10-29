@@ -1,0 +1,12 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:35432/template_db
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+    
+  data:
+    redis:
+      host: localhost
+      port: 6380
+      database: 0

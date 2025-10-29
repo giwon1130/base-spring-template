@@ -1,6 +1,9 @@
 spring:
   application:
     name: platform-template-test
+  
+  profiles:
+    active: test
     
   datasource:
     # TestContainers will override these
@@ -22,6 +25,7 @@ spring:
       # TestContainers will override these
       host: localhost
       port: 6370
+      database: 0
       key:
         refresh-token: "test:auth:refresh:"
 
