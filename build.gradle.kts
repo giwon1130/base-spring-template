@@ -75,6 +75,7 @@ dependencies {
     testImplementation("org.testcontainers:kafka")
     testImplementation("org.testcontainers:testcontainers")
     testImplementation("com.redis.testcontainers:testcontainers-redis-junit:1.6.4")
+    testImplementation("com.h2database:h2")  // H2 인메모리 DB for unit tests
     testImplementation(kotlin("test"))
 
     // JWT
