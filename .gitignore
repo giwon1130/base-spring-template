@@ -43,6 +43,9 @@ target/
 .env
 .env.local
 .env.*.local
+**/env.yml
+src/main/resources/env.yml
+src/test/resources/env.yml
 
 # Logs
 logs/
