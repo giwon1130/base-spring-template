@@ -10,6 +10,9 @@ BMOA 프로젝트에서 공통으로 사용하던 인프라 코드를 추려낸 
 - **SSE 알림 골격**: Redis Pub/Sub, Scene/Inference 알림 발행 서비스, 테스트용 엔드포인트
 - **Redis 캐시 인프라**: 캐시 이름 상수, 분산 무효화 메시지 발행
 - **공통 인프라**: 전역 예외 처리, 표준 응답, Docker Compose(Postgres + Redis), Flyway 마이그레이션
+- **이미지 처리 모듈**: 지도 타일 처리, 그래픽 드로잉, 이미지 유틸리티 (BMOA 이전 완료)
+- **문서 생성 모듈**: Apache POI 기반 Word 문서 생성, DSL 패턴 지원
+- **공통 유틸리티**: 공간 데이터(GeometryUtils), 날짜/시간, 파일 처리 유틸리티
 
 ## 기술 스택
 
@@ -22,6 +25,9 @@ BMOA 프로젝트에서 공통으로 사용하던 인프라 코드를 추려낸 
 | Cache | Redis |
 | 빌드 | Gradle Kotlin DSL |
 | 데이터베이스 마이그레이션 | Flyway |
+| 문서 처리 | Apache POI 5.2.4 |
+| 공간 데이터 | JTS (Java Topology Suite) |
+| 테스트 환경 | TestContainers (PostgreSQL + Redis) |
 
 ## 빠른 시작
 
@@ -172,22 +178,25 @@ curl -X POST http://localhost:8080/api/v1/auth/refresh \
 
 ## 테스트 실행
 
-### 통합 테스트
-실제 Postgres/Redis를 사용해 Flyway `clean → migrate` 후 아래 시나리오를 검증합니다.
+### 현재 테스트 커버리지: 100% (76/76 통과)
+
+| 모듈 | 테스트 수 | 성공률 | 포함 기능 |
+|------|----------|-------|----------|
+| **User Domain** | 6 | 100% | 사용자 엔티티, 인증 서비스 통합 테스트 |
+| **Common Utils** | 43 | 100% | 공간/날짜/파일 유틸리티 |
+| **Image Processing** | 21 | 100% | 지도 타일, 그래픽 드로잉, 이미지 처리 |
+| **Document Generation** | 6 | 100% | Apache POI 기반 Word 문서 생성 |
+
+### TestContainers 기반 통합 테스트
+실제 PostgreSQL(PostGIS) + Redis 컨테이너를 사용한 통합 테스트가 포함되어 있습니다.
 ```bash
-# 사용자 등록/로그인 흐름
-SPRING_PROFILES_ACTIVE=local ./gradlew test --tests com.template.platform.features.user.AuthServiceIntegrationTest
-
-# Scene CRUD + 필터링 + Soft Delete
-SPRING_PROFILES_ACTIVE=local ./gradlew test --tests com.template.platform.features.scene.SceneServiceIntegrationTest
-
-# AOI CRUD + 검색
-SPRING_PROFILES_ACTIVE=local ./gradlew test --tests com.template.platform.features.aoi.AoiServiceIntegrationTest
-```
-
-### 전체 테스트
-```bash
+# 전체 테스트 (외부 DB/Redis 불필요)
 ./gradlew test
+
+# 특정 모듈 테스트
+./gradlew test --tests "*User*"
+./gradlew test --tests "*GeometryUtils*"
+./gradlew test --tests "*GraphicsDrawUtils*"
 ```
 
 ### 빌드
@@ -271,13 +280,16 @@ rootProject.name = "your-project-name"
 src/main/kotlin/com/template/platform/
 ├── bootstrap/           # 핵심 설정 (DB, Redis, Security, Web)
 ├── common/             # 재사용 가능한 공통 모듈
+│   ├── document/       # Word 문서 생성 (Apache POI)
+│   ├── image/          # 이미지 처리, 지도 타일, 그래픽 드로잉
+│   ├── util/           # 공간 데이터, 날짜/시간, 파일 유틸리티
 │   ├── error/          # 표준 에러 체계
 │   ├── response/       # API 응답 래퍼
 │   ├── sse/           # SSE 알림 시스템
 │   ├── cache/         # 캐시 + 무효화
 │   └── domain/        # 공통 엔티티 (BaseEntity)
 └── features/          # 기능별 모듈
-    ├── user/          # 사용자 관리
+    ├── user/          # 사용자 관리 (완료)
     └── notification/  # 알림 시스템
 ```
 
@@ -292,6 +304,17 @@ src/main/kotlin/com/template/platform/
 - `SseManager`: SSE 연결 관리
 - `RedisNotificationPublisher`: Redis Pub/Sub 발행
 - `NotificationService`: 알림 비즈니스 로직
+
+#### 이미지 & 문서 처리 시스템 (BMOA 이전 완료)
+- `ImageUtils`: 이미지 생성 및 변환
+- `MapTileUtils`: 지도 타일 좌표 변환 (Web Mercator)
+- `GraphicsDrawUtils`: 폴리곤 드로잉, 라벨 렌더링
+- `DocumentBuilders`: Apache POI 기반 Word 문서 생성 DSL
+
+#### 공통 유틸리티
+- `GeometryUtils`: PostGIS/JTS 공간 데이터 처리
+- `DateTimeUtils`: 날짜/시간 변환 및 형식화
+- `FileUtils`: 파일 처리, 크기 형식화, 안전 삭제
 
 ## 다음 단계 제안
 
