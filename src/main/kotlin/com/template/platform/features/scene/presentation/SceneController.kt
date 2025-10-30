@@ -1,6 +1,7 @@
 package com.template.platform.features.scene.presentation
 
 import com.template.platform.common.response.CommonResponse
+import com.template.platform.common.response.PageResponse
 import com.template.platform.features.scene.application.SceneFileService
 import com.template.platform.features.scene.application.SceneService
 import com.template.platform.features.scene.application.dto.SceneCountResponse
@@ -39,7 +40,7 @@ class SceneController(
         @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) createdEnd: Instant?,
         @RequestParam(required = false) status: List<SceneStatus>?,
         pageable: Pageable
-    ): CommonResponse<Page<SceneResponse>> {
+    ): CommonResponse<PageResponse<SceneResponse>> {
         val scenes = sceneService.getSceneList(keyword, createdStart, createdEnd, status, pageable)
         return CommonResponse.success(data = scenes)
     }
@@ -50,9 +51,9 @@ class SceneController(
     }
 
     @PostMapping
-    fun createScene(@Valid @RequestBody request: SceneRequest): ResponseEntity<CommonResponse<SceneResponse>> {
+    fun createScene(@Valid @RequestBody request: SceneRequest): CommonResponse<SceneResponse> {
         val response = sceneService.createScene(request)
-        return ResponseEntity.ok(CommonResponse.success(data = response))
+        return CommonResponse.success(data = response)
     }
 
     @PutMapping("/{sceneId}")

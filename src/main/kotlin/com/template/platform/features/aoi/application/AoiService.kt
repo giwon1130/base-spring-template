@@ -2,7 +2,9 @@ package com.template.platform.features.aoi.application
 
 import com.template.platform.common.error.CustomException
 import com.template.platform.common.error.ErrorCode
+import com.template.platform.common.response.PageResponse
 import com.template.platform.common.util.GeometryUtils
+import com.template.platform.common.util.PagingMapper
 import com.template.platform.features.aoi.application.dto.AoiRequest
 import com.template.platform.features.aoi.application.dto.AoiResponse
 import com.template.platform.features.aoi.domain.Aoi
@@ -17,7 +19,8 @@ import java.time.Instant
 
 @Service
 class AoiService(
-    private val aoiRepository: AoiRepository
+    private val aoiRepository: AoiRepository,
+    private val pagingMapper: PagingMapper
 ) {
 
     @Transactional
@@ -45,12 +48,14 @@ class AoiService(
         return AoiResponse.from(entity, GeometryUtils.toWkt(entity.geometry)!!)
     }
 
-    fun getAoiList(keyword: String?, pageable: Pageable): Page<AoiResponse> {
+    fun getAoiList(keyword: String?, pageable: Pageable): PageResponse<AoiResponse> {
         var spec: Specification<Aoi> = Specification.where(null)
         AoiSpecifications.keywordLike(keyword)?.let { spec = spec.and(it) }
 
-        return aoiRepository.findAll(spec, pageable)
-            .map { AoiResponse.from(it, GeometryUtils.toWkt(it.geometry)!!) }
+        val page = aoiRepository.findAll(spec, pageable)
+        return pagingMapper.toPageResponse(page) { aoi ->
+            AoiResponse.from(aoi, GeometryUtils.toWkt(aoi.geometry)!!)
+        }
     }
 
     @Transactional

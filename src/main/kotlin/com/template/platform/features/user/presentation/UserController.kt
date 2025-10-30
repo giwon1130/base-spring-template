@@ -29,13 +29,13 @@ class UserController(
     @Operation(summary = "내 정보 조회", description = "로그인한 사용자의 정보를 조회합니다.")
     fun getUserInfo(
         @AuthenticationPrincipal userDetails: CustomUserDetails
-    ): ResponseEntity<CommonResponse<UserResponse>> {
+    ): CommonResponse<UserResponse> {
         logger.info { "내 정보 조회 요청 - userId=${userDetails.getUserId()}" }
 
         val userResponse = userService.getUserInfo(userDetails.getUserId())
 
         logger.info { "내 정보 조회 완료 - email=${userResponse.email}, name=${userResponse.name}" }
-        return ResponseEntity.ok(CommonResponse(data = userResponse))
+        return CommonResponse.success(data = userResponse)
     }
 
     @PutMapping("/me")
@@ -43,12 +43,12 @@ class UserController(
     fun updateUserInfo(
         @AuthenticationPrincipal userDetails: CustomUserDetails,
         @RequestBody request: UpdateUserRequest
-    ): ResponseEntity<CommonResponse<UserResponse>> {
+    ): CommonResponse<UserResponse> {
         logger.info { "내 정보 수정 요청 - userId=${userDetails.getUserId()}" }
 
         val updated = userService.updateUserInfo(userDetails.getUserId(), request)
 
         logger.info { "내 정보 수정 완료 - email=${updated.email}, name=${updated.name}" }
-        return ResponseEntity.ok(CommonResponse(data = updated))
+        return CommonResponse.success(data = updated)
     }
 }

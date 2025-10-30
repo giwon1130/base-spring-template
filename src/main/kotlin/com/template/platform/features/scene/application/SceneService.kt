@@ -4,7 +4,9 @@ import com.querydsl.core.types.dsl.BooleanExpression
 import com.querydsl.jpa.impl.JPAQueryFactory
 import com.template.platform.common.error.CustomException
 import com.template.platform.common.error.ErrorCode
+import com.template.platform.common.response.PageResponse
 import com.template.platform.common.util.GeometryUtils
+import com.template.platform.common.util.PagingMapper
 import com.template.platform.features.scene.application.dto.SceneCountResponse
 import com.template.platform.features.scene.application.dto.SceneRequest
 import com.template.platform.features.scene.application.dto.SceneResponse
@@ -22,7 +24,8 @@ import java.time.Instant
 @Service
 class SceneService(
     private val sceneRepository: SceneRepository,
-    private val queryFactory: JPAQueryFactory
+    private val queryFactory: JPAQueryFactory,
+    private val pagingMapper: PagingMapper
 ) {
 
     private val scenePath = QScene("scene")
@@ -59,7 +62,7 @@ class SceneService(
         createdEnd: Instant?,
         statuses: List<SceneStatus>?,
         pageable: Pageable
-    ): Page<SceneResponse> {
+    ): PageResponse<SceneResponse> {
         validatePeriod(createdStart, createdEnd)
 
         val predicates = buildList {
@@ -83,7 +86,8 @@ class SceneService(
             .where(*predicates.toTypedArray())
             .fetchFirst() ?: 0L
 
-        return PageImpl(results.map(SceneResponse::from), pageable, count)
+        val page = PageImpl(results, pageable, count)
+        return pagingMapper.toPageResponse(page, SceneResponse::from)
     }
 
     fun countScenes(createdStart: Instant, createdEnd: Instant): SceneCountResponse {

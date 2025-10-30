@@ -1,348 +1,400 @@
 # Spring Boot Base Template
 
-BMOA 프로젝트에서 공통으로 사용하던 인프라 코드를 추려낸 Spring Boot 템플릿입니다. 인증/사용자/SSE/Redis 캐시 등 "플랫폼 공통 기능"까지만 포함하며, 비즈니스 도메인은 이후에 자유롭게 추가할 수 있도록 비워두었습니다.
+BMOA 프로젝트에서 검증된 공통 인프라를 추출한 Spring Boot 템플릿입니다. 엔터프라이즈급 인증/보안, 실시간 알림, 공간 데이터 처리, 문서 생성 등 플랫폼 공통 기능을 제공하며, 비즈니스 도메인은 자유롭게 추가할 수 있도록 설계되었습니다.
 
-## 현재 포함 기능
+## 포함된 기능
 
-- **인증 & 보안**: Spring Security + JWT (Access/Refresh), Refresh Token Redis 보관
-- **사용자 관리**: 회원가입/로그인/내 정보 수정 API, Auditing 포함
-- **Scene & AOI 기본 관리**: Scene/AOI CRUD + 필터/검색, SRID 4326 Polygon 지원
-- **SSE 알림 골격**: Redis Pub/Sub, Scene/Inference 알림 발행 서비스, 테스트용 엔드포인트
-- **Redis 캐시 인프라**: 캐시 이름 상수, 분산 무효화 메시지 발행
-- **공통 인프라**: 전역 예외 처리, 표준 응답, Docker Compose(Postgres + Redis), Flyway 마이그레이션
-- **이미지 처리 모듈**: 지도 타일 처리, 그래픽 드로잉, 이미지 유틸리티 (BMOA 이전 완료)
-- **문서 생성 모듈**: Apache POI 기반 Word 문서 생성, DSL 패턴 지원
-- **공통 유틸리티**: 공간 데이터(GeometryUtils), 날짜/시간, 파일 처리 유틸리티
+### 핵심 인프라
+- **인증 & 보안**: Spring Security + JWT (Access/Refresh), Redis 기반 세션 관리
+- **사용자 관리**: 회원가입/로그인/프로필 관리 API, JPA Auditing 지원
+- **실시간 알림**: SSE + Redis Pub/Sub 기반 알림 시스템
+- **캐시 시스템**: Redis 분산 캐시, 무효화 메시지 발행
+- **전역 예외 처리**: 표준화된 에러 응답, CommonResponse 패턴
+
+### 데이터 처리 모듈 (BMOA 검증 완료)
+- **공간 데이터**: PostGIS/JTS 기반 지리정보 처리, WKT/WKB 변환
+- **이미지 처리**: 지도 타일 시스템, 그래픽 드로잉, BufferedImage 유틸리티
+- **문서 생성**: Apache POI 기반 Word 문서 생성 DSL
+- **페이지네이션**: 프론트엔드 친화적인 PageResponse 패턴
+
+### 개발 환경
+- **Docker 인프라**: PostgreSQL(PostGIS) + Redis 컨테이너
+- **데이터베이스**: Flyway 마이그레이션, 자동 스키마 관리
+- **테스트 환경**: TestContainers 기반 통합 테스트 (100% 통과)
+- **API 문서**: Swagger/OpenAPI 3.0, JWT 인증 지원
 
 ## 기술 스택
 
-| 항목 | 버전/구성 |
-|------|-----------|
-| Kotlin | 1.9.x |
-| Spring Boot | 3.2.1 |
-| Java | 17 |
-| DB | PostgreSQL (PostGIS) |
-| Cache | Redis |
-| 빌드 | Gradle Kotlin DSL |
-| 데이터베이스 마이그레이션 | Flyway |
-| 문서 처리 | Apache POI 5.2.4 |
-| 공간 데이터 | JTS (Java Topology Suite) |
-| 테스트 환경 | TestContainers (PostgreSQL + Redis) |
+| 분야 | 기술 | 버전 |
+|------|------|------|
+| **언어** | Kotlin | 1.9.x |
+| **프레임워크** | Spring Boot | 3.2.1 |
+| **JVM** | OpenJDK | 17 |
+| **데이터베이스** | PostgreSQL + PostGIS | 15-3.5 |
+| **캐시** | Redis | 6.2 |
+| **빌드** | Gradle Kotlin DSL | 8.12.1 |
+| **ORM** | Spring Data JPA + QueryDSL | 3.2.1 |
+| **마이그레이션** | Flyway | 9.x |
+| **문서 처리** | Apache POI | 5.2.4 |
+| **공간 데이터** | JTS (Java Topology Suite) | - |
+| **테스트** | TestContainers + JUnit 5 | - |
 
 ## 빠른 시작
 
-### 0. 요구 사항
+### 전제 조건
+```bash
+# 필수 요구사항
 - Docker & Docker Compose
-- JDK 17 (예: Amazon Corretto 17)
+- JDK 17+ (Amazon Corretto 17 권장)
+```
 
-### 1. 프로젝트 클론
+### 1. 프로젝트 설정
 ```bash
 git clone <repo-url>
 cd spring-boot-base-template
 ```
 
-### 2. 인프라 서비스 기동
-`docker-compose.yml`만으로 Postgres/Redis가 올라가며, 포트는 각각 `35432`, `6380` 입니다.
+### 2. 인프라 실행
 ```bash
+# PostgreSQL + Redis 컨테이너 시작
 docker compose up -d db redis
+
+# 컨테이너 상태 확인
+docker ps
 ```
 
 ### 3. 애플리케이션 실행
 ```bash
+# 개발 모드 실행
 ./gradlew bootRun
+
+# 또는 JAR 빌드 후 실행
+./gradlew build
+java -jar build/libs/spring-boot-base-template-*.jar
 ```
 
-기본적으로 `local` 프로필이 활성화되며, 다음 환경 변수를 통해 동작을 조정할 수 있습니다.
+### 4. 상태 확인
+```bash
+# 헬스 체크
+curl http://localhost:8080/actuator/health
 
-| 변수 | 기본값 | 설명 |
-|------|--------|------|
+# Swagger UI 접속
+open http://localhost:8080/swagger-ui/index.html
+```
+
+## 환경 설정
+
+### 주요 환경 변수
+| 변수명 | 기본값 | 설명 |
+|--------|--------|------|
 | `SPRING_PROFILES_ACTIVE` | `local` | 실행 프로필 |
-| `JWT_SECRET` | 기본 내장 값 | 운영 환경에서는 반드시 교체 |
-| `JWT_EXPIRATION` | `3600000` | Access Token 만료(ms) |
+| `JWT_SECRET` | 내장값 | JWT 서명 키 (운영환경 필수 변경) |
+| `JWT_EXPIRATION` | `3600000` | Access Token 만료시간 (ms) |
 
-### 4. 종료
-```bash
-docker compose down
-```
+### 인프라 설정
+| 서비스 | 포트 | 접속 정보 |
+|--------|------|----------|
+| **애플리케이션** | 8080 | http://localhost:8080 |
+| **PostgreSQL** | 35432 | postgres/postgres@localhost:35432/template_db |
+| **Redis** | 6380 | localhost:6380 |
 
-## 🔧 환경 변수 (env.yml 참고)
+## API 가이드
 
-| Key | 설명 | 템플릿 기본값 |
-|-----|------|---------------|
-| `SCENE_PRESIGNED_SECRET` | Scene/Label 다운로드 URL 서명 비밀키 | `scene-presigned-secret` |
-| `SCENE_PRESIGNED_EXPIRES` | Presigned URL 만료 시간(초) | `600` |
-| `SCENE_DOWNLOAD_URL_PREFIX` | Scene 다운로드 기본 경로 | `/api/v1/scenes/change-detections` |
-| `LABEL_DOWNLOAD_SECRET` | Label 다운로드 비밀키 (없으면 Scene과 동일) | `scene-presigned-secret` |
-| `LABEL_DOWNLOAD_URL_PREFIX` | Label 다운로드 기본 경로 | `/api/v1/scenes/change-detections` |
+### 표준 응답 형식
+모든 API는 일관된 응답 구조를 사용합니다:
 
-## 주요 API 엔드포인트
-
-### 인증 API
-| Method | Path | 설명 | 인증 필요 |
-|--------|------|------|----------|
-| POST | `/api/v1/auth/register` | 회원가입 | ❌ |
-| POST | `/api/v1/auth/login` | 로그인 (JWT 발급) | ❌ |
-| POST | `/api/v1/auth/refresh` | Access Token 갱신 | ❌ |
-
-### 사용자 API
-| Method | Path | 설명 | 인증 필요 |
-|--------|------|------|----------|
-| GET | `/api/v1/user/me` | 내 정보 조회 | ✅ |
-| PUT | `/api/v1/user/me` | 내 정보 수정 | ✅ |
-
-### 알림 API
-| Method | Path | 설명 | 인증 필요 |
-|--------|------|------|----------|
-| GET | `/api/v1/notifications/stream/{email}` | SSE 구독 | ❌ |
-| POST | `/api/v1/notifications/test/send` | 테스트 알림 발행 | ❌ |
-
-### Scene API
-| Method | Path | 설명 | 인증 필요 |
-|--------|------|------|----------|
-| GET | `/api/v1/scenes` | Scene 목록 조회 (키워드/기간/상태 필터) | ✅ |
-| GET | `/api/v1/scenes/{sceneId}` | Scene 상세 조회 | ✅ |
-| POST | `/api/v1/scenes` | Scene 등록 | ✅ |
-| PUT | `/api/v1/scenes/{sceneId}` | Scene 수정 | ✅ |
-| DELETE | `/api/v1/scenes/{sceneId}` | Scene 소프트 삭제 | ✅ |
-| GET | `/api/v1/scenes/count` | 기간 내 Scene 개수 조회 | ✅ |
-| GET | `/api/v1/scenes/change-detections/{changeDetectionId}/download-url` | Scene 파일 presigned URL 발급 | ✅ |
-| GET | `/api/v1/scenes/change-detections/{changeDetectionId}/download` | Scene 파일 다운로드 (presigned) | ✅ |
-| GET | `/api/v1/scenes/change-detections/{changeDetectionId}/labels/download-url` | Label GeoJSON presigned URL 발급 | ✅ |
-| GET | `/api/v1/scenes/change-detections/{changeDetectionId}/labels/download` | Label GeoJSON 다운로드 (presigned) | ✅ |
-
-### AOI API
-| Method | Path | 설명 | 인증 필요 |
-|--------|------|------|----------|
-| GET | `/api/v1/aois` | AOI 목록 조회 (코드명 검색) | ✅ |
-| GET | `/api/v1/aois/{aoiId}` | AOI 상세 조회 | ✅ |
-| POST | `/api/v1/aois` | AOI 등록 | ✅ |
-| PUT | `/api/v1/aois/{aoiId}` | AOI 수정 | ✅ |
-| DELETE | `/api/v1/aois/{aoiId}` | AOI 소프트 삭제 | ✅ |
-
-### 모니터링
-| Method | Path | 설명 | 인증 필요 |
-|--------|------|------|----------|
-| GET | `/actuator/health` | 헬스 체크 | ❌ |
-| GET | `/actuator/metrics` | 메트릭 정보 | ❌ |
-
-## API 테스트 예제
-
-### 1. 회원가입
-```bash
-curl -X POST http://localhost:8080/api/v1/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "test@example.com",
-    "password": "password123",
-    "name": "Test User",
-    "role": "USER"
-  }'
-```
-
-### 2. 로그인
-```bash
-curl -X POST http://localhost:8080/api/v1/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "test@example.com",
-    "password": "password123"
-  }'
-```
-
-응답 예시:
 ```json
 {
   "status": "SUCCESS",
   "message": "요청이 정상 처리되었습니다.",
+  "data": { ... }
+}
+```
+
+### 페이지네이션 응답
+목록 조회 API는 프론트엔드 친화적인 페이지네이션을 제공합니다:
+
+```json
+{
+  "status": "SUCCESS",
   "data": {
-    "accessToken": "eyJhbGciOiJIUzI1NiJ9...",
-    "refreshToken": "88708aea-5a15-4493-8a96-0cb6ad2afd8a"
+    "content": [ ... ],
+    "totalElements": 100,
+    "totalPages": 10,
+    "page": 0,
+    "size": 10,
+    "isFirst": true,
+    "isLast": false
   }
 }
 ```
 
-### 3. 인증이 필요한 API 호출
+### 핵심 API 엔드포인트
+
+#### 인증 API
 ```bash
-curl -H "Authorization: Bearer <ACCESS_TOKEN>" \
-  http://localhost:8080/api/v1/user/me
+# 회원가입
+POST /api/v1/auth/register
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "password": "password123",
+  "name": "사용자명",
+  "role": "USER"
+}
+
+# 로그인
+POST /api/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "password": "password123"
+}
+
+# 토큰 갱신
+POST /api/v1/auth/refresh
+Content-Type: application/json
+
+{
+  "refreshToken": "88708aea-5a15-4493-8a96-0cb6ad2afd8a"
+}
 ```
 
-### 4. Access Token 갱신
+#### 사용자 API
 ```bash
-curl -X POST http://localhost:8080/api/v1/auth/refresh \
-  -H "Content-Type: application/json" \
-  -d '{
-    "refreshToken": "<REFRESH_TOKEN>"
-  }'
+# 내 정보 조회
+GET /api/v1/user/me
+Authorization: Bearer <ACCESS_TOKEN>
+
+# 내 정보 수정
+PUT /api/v1/user/me
+Authorization: Bearer <ACCESS_TOKEN>
+Content-Type: application/json
+
+{
+  "name": "변경된 이름"
+}
 ```
 
-## 테스트 실행
+#### Scene/AOI API (페이지네이션 지원)
+```bash
+# Scene 목록 조회 (필터링 + 페이지네이션)
+GET /api/v1/scenes?keyword=test&page=0&size=10&sort=sceneId,desc
+Authorization: Bearer <ACCESS_TOKEN>
+
+# AOI 목록 조회 (검색 + 페이지네이션)
+GET /api/v1/aois?keyword=seoul&page=0&size=10
+Authorization: Bearer <ACCESS_TOKEN>
+```
+
+#### 실시간 알림 API
+```bash
+# SSE 연결
+GET /api/v1/notifications/stream/{userEmail}
+
+# 테스트 알림 발송
+POST /api/v1/notifications/test/send
+```
+
+## 테스트
 
 ### 현재 테스트 커버리지: 100% (76/76 통과)
 
-| 모듈 | 테스트 수 | 성공률 | 포함 기능 |
-|------|----------|-------|----------|
-| **User Domain** | 6 | 100% | 사용자 엔티티, 인증 서비스 통합 테스트 |
-| **Common Utils** | 43 | 100% | 공간/날짜/파일 유틸리티 |
-| **Image Processing** | 21 | 100% | 지도 타일, 그래픽 드로잉, 이미지 처리 |
-| **Document Generation** | 6 | 100% | Apache POI 기반 Word 문서 생성 |
+| 모듈 | 테스트 수 | 커버리지 | 주요 기능 |
+|------|----------|---------|----------|
+| **User Domain** | 6 | 100% | 인증, 사용자 관리 |
+| **Common Utils** | 43 | 100% | 공간데이터, 날짜, 파일처리 |
+| **Image Processing** | 21 | 100% | 지도타일, 그래픽 렌더링 |
+| **Document Generation** | 6 | 100% | Word 문서 생성 |
 
-### TestContainers 기반 통합 테스트
-실제 PostgreSQL(PostGIS) + Redis 컨테이너를 사용한 통합 테스트가 포함되어 있습니다.
+### 테스트 실행
 ```bash
-# 전체 테스트 (외부 DB/Redis 불필요)
+# 전체 테스트 (TestContainers 사용, 외부 의존성 불필요)
 ./gradlew test
 
 # 특정 모듈 테스트
 ./gradlew test --tests "*User*"
 ./gradlew test --tests "*GeometryUtils*"
-./gradlew test --tests "*GraphicsDrawUtils*"
-```
+./gradlew test --tests "*PagingMapper*"
 
-### 빌드
-```bash
+# 빌드 + 테스트
 ./gradlew build
 ```
 
-## 데이터베이스 스키마
-
-### Flyway 마이그레이션
-
-| 파일 | 내용 |
-|------|------|
-| `V1__initial_schema.sql` | PostGIS 확장, Outbox/Changeset 기본 테이블 |
-| `V2__create_users_table.sql` | 사용자 테이블 및 감사 컬럼 |
-
-### 주요 테이블
-
-#### users
-- `user_id`: Primary Key
-- `email`: 이메일 (Unique)
-- `password`: 암호화된 비밀번호
-- `name`: 사용자 이름
-- `role`: 사용자 권한 (USER, ADMIN)
-- `created_at`, `updated_at`: 감사 컬럼
-
-## 설정 파일
-
-### application.yml 주요 설정
-```yaml
-spring:
-  datasource:
-    url: jdbc:postgresql://localhost:35432/template_db
-    username: postgres
-    password: postgres
-    
-  data:
-    redis:
-      host: localhost
-      port: 6380
-      key:
-        refresh-token: "platform:auth:refresh:"
-        
-jwt:
-  secret: ${JWT_SECRET:기본값}
-  expiration: ${JWT_EXPIRATION:3600000}
-```
-
-## 보안 설정
-
-### 허용된 엔드포인트
-- `/api/v1/auth/**` - 인증 관련
-- `/api/v1/notifications/**` - 알림 관련
-- `/actuator/**` - 모니터링
-- `/swagger-ui/**`, `/v3/api-docs/**` - API 문서
-
-### 인증이 필요한 엔드포인트
-- `/api/v1/user/**` - 사용자 정보 관련
-- `/api/v1/admin/**` - 관리자 전용 (ADMIN 권한 필요)
-
-## 커스터마이징 가이드
-
-### 1. 패키지/프로젝트 이름 변경
-```kotlin
-// settings.gradle.kts
-rootProject.name = "your-project-name"
-```
-패키지 이름 `com.template.platform`을 일괄 변경하세요.
-
-### 2. 새 엔티티 추가
-- `src/main/resources/db/migration/V3__....sql`에 Flyway 스크립트 작성
-- `BaseEntity`/`BaseTimeEntity`를 상속하면 감사 컬럼이 자동 적용됩니다.
-
-### 3. SSE 알림 확장
-- `NotificationTargetResolver` 구현을 교체하여 대상자 선택 전략을 커스터마이징할 수 있습니다.
+### TestContainers 통합 테스트
+실제 PostgreSQL(PostGIS) + Redis 컨테이너를 사용하여 프로덕션 환경과 동일한 조건에서 테스트를 수행합니다.
 
 ## 아키텍처
 
 ### 패키지 구조
 ```
 src/main/kotlin/com/template/platform/
-├── bootstrap/           # 핵심 설정 (DB, Redis, Security, Web)
-├── common/             # 재사용 가능한 공통 모듈
-│   ├── document/       # Word 문서 생성 (Apache POI)
-│   ├── image/          # 이미지 처리, 지도 타일, 그래픽 드로잉
-│   ├── util/           # 공간 데이터, 날짜/시간, 파일 유틸리티
-│   ├── error/          # 표준 에러 체계
-│   ├── response/       # API 응답 래퍼
-│   ├── sse/           # SSE 알림 시스템
-│   ├── cache/         # 캐시 + 무효화
-│   └── domain/        # 공통 엔티티 (BaseEntity)
-└── features/          # 기능별 모듈
-    ├── user/          # 사용자 관리 (완료)
-    └── notification/  # 알림 시스템
+├── bootstrap/              # 핵심 설정
+│   ├── config/             # DB, Redis, QueryDSL 설정
+│   ├── security/           # JWT, Spring Security
+│   └── web/                # Web MVC 설정
+├── common/                 # 공통 모듈
+│   ├── response/           # API 응답 (CommonResponse, PageResponse)
+│   ├── util/               # 유틸리티 (PagingMapper, GeometryUtils)
+│   ├── document/           # 문서 생성 (Apache POI DSL)
+│   ├── image/              # 이미지 처리 (지도타일, 그래픽)
+│   ├── error/              # 전역 예외 처리
+│   ├── sse/                # 실시간 알림
+│   ├── cache/              # Redis 캐시
+│   └── domain/             # 공통 엔티티
+└── features/               # 도메인별 기능
+    ├── user/               # 사용자 관리
+    │   ├── domain/         # User 엔티티
+    │   ├── application/    # UserService, AuthService
+    │   └── presentation/   # UserController, AuthController
+    └── notification/       # 알림 시스템
 ```
 
-### 주요 컴포넌트
+### 주요 설계 패턴
 
-#### JWT 인증 시스템
-- `JwtUtil`: JWT 토큰 생성/검증
-- `JwtAuthenticationFilter`: JWT 인증 필터
-- `RefreshTokenService`: Refresh Token Redis 관리
+#### 1. CommonResponse 패턴
+모든 API가 일관된 응답 구조를 사용합니다:
+```kotlin
+@GetMapping("/endpoint")
+fun getMethod(): CommonResponse<DataType> {
+    return CommonResponse.success(data = result)
+}
+```
 
-#### SSE 알림 시스템
-- `SseManager`: SSE 연결 관리
-- `RedisNotificationPublisher`: Redis Pub/Sub 발행
-- `NotificationService`: 알림 비즈니스 로직
+#### 2. PageResponse + PagingMapper 패턴
+BMOA 검증된 페이지네이션 구조를 사용합니다:
+```kotlin
+fun getList(pageable: Pageable): PageResponse<ResponseDto> {
+    val page = repository.findAll(pageable)
+    return pagingMapper.toPageResponse(page) { entity ->
+        ResponseDto.from(entity)
+    }
+}
+```
 
-#### 이미지 & 문서 처리 시스템 (BMOA 이전 완료)
-- `ImageUtils`: 이미지 생성 및 변환
-- `MapTileUtils`: 지도 타일 좌표 변환 (Web Mercator)
-- `GraphicsDrawUtils`: 폴리곤 드로잉, 라벨 렌더링
-- `DocumentBuilders`: Apache POI 기반 Word 문서 생성 DSL
+#### 3. DDD 기반 Feature 모듈
+도메인별로 독립적인 패키지 구조를 유지합니다:
+- `domain/`: 엔티티, 리포지토리
+- `application/`: 서비스, DTO
+- `presentation/`: 컨트롤러, 요청/응답
 
-#### 공통 유틸리티
-- `GeometryUtils`: PostGIS/JTS 공간 데이터 처리
-- `DateTimeUtils`: 날짜/시간 변환 및 형식화
-- `FileUtils`: 파일 처리, 크기 형식화, 안전 삭제
+## 개발 가이드
 
-## 다음 단계 제안
+### 1. 새로운 도메인 추가
+```bash
+# 1. 패키지 구조 생성
+mkdir -p src/main/kotlin/com/template/platform/features/newdomain/{domain,application,presentation}
 
-- Scene / AOI / Change Detection 등 비즈니스 도메인 이식
-- Kafka, 외부 STAC 연동 등 고급 기능
-- API 문서화(Swagger) 및 운영 환경 구성
+# 2. Flyway 마이그레이션 작성
+touch src/main/resources/db/migration/V5__create_newdomain_table.sql
 
-## 개발 노트
+# 3. 엔티티 작성 (BaseEntity 상속)
+# 4. Repository, Service, Controller 구현
+# 5. 테스트 작성
+```
 
-현재 버전은 "공통 인프라 템플릿"으로 고정(fix)하기 적합한 상태입니다. 이후 도메인 마이그레이션을 진행하면서 버전을 올리거나 기능을 추가해 나가세요.
+### 2. 페이지네이션 적용
+```kotlin
+// Controller
+@GetMapping
+fun getItems(pageable: Pageable): CommonResponse<PageResponse<ItemResponse>> {
+    return CommonResponse.success(data = service.getItems(pageable))
+}
+
+// Service
+fun getItems(pageable: Pageable): PageResponse<ItemResponse> {
+    val page = repository.findAll(pageable)
+    return pagingMapper.toPageResponse(page, ItemResponse::from)
+}
+```
+
+### 3. 공간 데이터 처리
+```kotlin
+// WKT를 Polygon으로 변환
+val polygon = GeometryUtils.polygonFromWkt("POLYGON((...))")
+
+// 두 지점 간 거리 계산
+val distance = GeometryUtils.haversineDistance(lon1, lat1, lon2, lat2)
+
+// BBOX를 Polygon으로 변환
+val bbox = GeometryUtils.bboxToPolygon(minX, minY, maxX, maxY)
+```
+
+## 운영 환경 배포
+
+### 1. 환경 변수 설정
+```bash
+export SPRING_PROFILES_ACTIVE=prod
+export JWT_SECRET=your-production-secret-key
+export DATABASE_URL=jdbc:postgresql://prod-db:5432/app_db
+export REDIS_URL=redis://prod-redis:6379
+```
+
+### 2. Docker 배포
+```dockerfile
+FROM openjdk:17-jre-slim
+COPY build/libs/spring-boot-base-template-*.jar app.jar
+EXPOSE 8080
+ENTRYPOINT ["java", "-jar", "/app.jar"]
+```
+
+### 3. 헬스 체크
+```bash
+curl http://localhost:8080/actuator/health
+curl http://localhost:8080/actuator/metrics
+```
 
 ## 문제 해결
 
 ### 자주 발생하는 이슈
 
-#### 1. Docker 컨테이너가 시작되지 않는 경우
+#### 1. 컨테이너 관련
 ```bash
-docker compose down
-docker compose up -d db redis
+# 컨테이너 재시작
+docker compose down && docker compose up -d db redis
+
+# 로그 확인
+docker compose logs db redis
+
+# 포트 충돌 확인
+lsof -i :35432 :6380 :8080
 ```
 
-#### 2. JWT 관련 오류
-- `JWT_SECRET` 환경변수 확인
-- 토큰 만료 시간 확인
+#### 2. 빌드 관련
+```bash
+# Gradle 캐시 초기화
+./gradlew clean build --refresh-dependencies
 
-#### 3. Redis 연결 오류
-- Redis 컨테이너 상태 확인: `docker ps`
-- 포트 충돌 확인: `lsof -i :6380`
+# 테스트 제외 빌드
+./gradlew build -x test
+```
+
+#### 3. 데이터베이스 관련
+```bash
+# Flyway 정보 확인
+./gradlew flywayInfo
+
+# Flyway 재실행
+./gradlew flywayClean flywayMigrate
+```
+
+## 다음 단계
+
+이 템플릿을 기반으로 다음과 같은 기능을 추가할 수 있습니다:
+
+1. **비즈니스 도메인**: 변화탐지, 객체추론, 보고서 생성
+2. **고급 기능**: Kafka, 외부 API 연동, 배치 처리
+3. **운영 도구**: 모니터링, 로깅, 배포 자동화
+4. **성능 최적화**: 쿼리 튜닝, 캐시 전략, API 최적화
+
+## 기여 가이드
+
+1. Issue 등록 후 브랜치 생성
+2. 기능 개발 + 테스트 작성
+3. Pull Request 생성
+4. 코드 리뷰 후 머지
 
 ## 라이선스
 
@@ -350,4 +402,4 @@ MIT License
 
 ---
 
-**문의사항이나 버그 제보는 GitHub Issues를 활용해 주세요.**
+**문의사항**: GitHub Issues 또는 [이메일](mailto:dev@example.com)

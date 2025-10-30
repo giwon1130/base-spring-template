@@ -1,6 +1,7 @@
 package com.template.platform.features.aoi.presentation
 
 import com.template.platform.common.response.CommonResponse
+import com.template.platform.common.response.PageResponse
 import com.template.platform.features.aoi.application.AoiService
 import com.template.platform.features.aoi.application.dto.AoiRequest
 import com.template.platform.features.aoi.application.dto.AoiResponse
@@ -27,7 +28,7 @@ class AoiController(
     fun getAois(
         @RequestParam(required = false) keyword: String?,
         pageable: Pageable
-    ): CommonResponse<Page<AoiResponse>> {
+    ): CommonResponse<PageResponse<AoiResponse>> {
         return CommonResponse.success(data = aoiService.getAoiList(keyword, pageable))
     }
 

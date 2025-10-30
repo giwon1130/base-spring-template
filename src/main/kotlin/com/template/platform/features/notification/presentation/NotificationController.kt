@@ -65,9 +65,9 @@ class NotificationController(
         @PathVariable userEmail: String,
         @RequestParam status: String = "ALL",
         pageable: Pageable
-    ): ResponseEntity<CommonResponse<PageResponse<NotificationDto>>> {
+    ): CommonResponse<PageResponse<NotificationDto>> {
         val notifications = notificationService.getNotificationList(userEmail, status, pageable)
-        return ResponseEntity.ok(CommonResponse.success(data = notifications))
+        return CommonResponse.success(data = notifications)
     }
 
     /**

@@ -25,23 +25,23 @@ class AuthController(
     private val logger = KotlinLogging.logger {}
 
     @PostMapping("/register")
-    fun register(@Valid @RequestBody request: RegisterRequest): ResponseEntity<CommonResponse<String>> {
+    fun register(@Valid @RequestBody request: RegisterRequest): CommonResponse<String> {
         logger.info { "회원가입 요청 - email=${request.email}" }
         authService.registerUser(request)
-        return ResponseEntity.ok(CommonResponse(data = "회원가입이 완료되었습니다."))
+        return CommonResponse.success(data = "회원가입이 완료되었습니다.")
     }
 
     @PostMapping("/login")
-    fun login(@Valid @RequestBody request: LoginRequest): ResponseEntity<CommonResponse<LoginResponse>> {
+    fun login(@Valid @RequestBody request: LoginRequest): CommonResponse<LoginResponse> {
         logger.info { "로그인 요청 - email=${request.email}" }
         val response = commonAuthService.login(request)
-        return ResponseEntity.ok(CommonResponse(data = response))
+        return CommonResponse.success(data = response)
     }
 
     @PostMapping("/refresh")
-    fun refresh(@Valid @RequestBody request: RefreshTokenRequest): ResponseEntity<CommonResponse<LoginResponse>> {
+    fun refresh(@Valid @RequestBody request: RefreshTokenRequest): CommonResponse<LoginResponse> {
         logger.info { "Access Token 갱신 요청" }
         val response = commonAuthService.refresh(request)
-        return ResponseEntity.ok(CommonResponse(data = response))
+        return CommonResponse.success(data = response)
     }
 }
