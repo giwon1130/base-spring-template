@@ -3,7 +3,7 @@
 **/build/
 !src/**/build/
 gradle-app.setting
-!gradle-wrapper.jar
+!gradle/wrapper/gradle-wrapper.jar
 .gradletasknamecache
 
 # IDE
@@ -38,6 +38,7 @@ hs_err_pid*
 target/
 !**/src/main/**/target/
 !**/src/test/**/target/
+!gradle/wrapper/gradle-wrapper.jar
 
 # Environment
 .env

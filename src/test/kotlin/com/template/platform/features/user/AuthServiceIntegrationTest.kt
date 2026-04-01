@@ -11,19 +11,22 @@ import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.ActiveProfiles
+import org.springframework.test.context.DynamicPropertyRegistry
+import org.springframework.test.context.DynamicPropertySource
+import org.testcontainers.containers.GenericContainer
+import org.testcontainers.containers.PostgreSQLContainer
+import org.testcontainers.junit.jupiter.Container
+import org.testcontainers.junit.jupiter.Testcontainers
+import org.testcontainers.utility.DockerImageName
 import java.util.UUID
+import javax.sql.DataSource
 
 @SpringBootTest
-@ActiveProfiles(profiles = ["local"], inheritProfiles = false)
+@Testcontainers
+@ActiveProfiles(profiles = ["test"], inheritProfiles = false)
 @org.springframework.test.context.TestPropertySource(
     properties = [
-        "spring.datasource.url=jdbc:postgresql://localhost:35432/template_db",
-        "spring.datasource.username=postgres",
-        "spring.datasource.password=postgres",
-        "spring.datasource.driver-class-name=org.postgresql.Driver",
         "spring.jpa.hibernate.ddl-auto=none",
-        "spring.data.redis.host=localhost",
-        "spring.data.redis.port=6380",
         "spring.data.redis.key.refresh-token=platform:auth:refresh:",
         "spring.flyway.clean-disabled=false",
         "jwt.secret=integration-test-secret",
@@ -33,8 +36,37 @@ import java.util.UUID
 class AuthServiceIntegrationTest @Autowired constructor(
     private val authService: AuthService,
     private val userRepository: UserRepository,
-    private val dataSource: javax.sql.DataSource
+    private val dataSource: DataSource
 ) {
+
+    companion object {
+        @Container
+        @JvmStatic
+        val postgres = PostgreSQLContainer(
+            DockerImageName.parse("postgis/postgis:15-3.5").asCompatibleSubstituteFor("postgres")
+        ).apply {
+            withDatabaseName("template_db")
+            withUsername("postgres")
+            withPassword("postgres")
+        }
+
+        @Container
+        @JvmStatic
+        val redis = GenericContainer(DockerImageName.parse("redis:7-alpine")).apply {
+            withExposedPorts(6379)
+        }
+
+        @JvmStatic
+        @DynamicPropertySource
+        fun registerProperties(registry: DynamicPropertyRegistry) {
+            registry.add("spring.datasource.url", postgres::getJdbcUrl)
+            registry.add("spring.datasource.username", postgres::getUsername)
+            registry.add("spring.datasource.password", postgres::getPassword)
+            registry.add("spring.datasource.driver-class-name") { "org.postgresql.Driver" }
+            registry.add("spring.data.redis.host", redis::getHost)
+            registry.add("spring.data.redis.port") { redis.getMappedPort(6379) }
+        }
+    }
 
     @BeforeEach
     fun setup() {
@@ -66,6 +98,6 @@ class AuthServiceIntegrationTest @Autowired constructor(
         assertThat(found).isPresent
         assertThat(found.get().email).isEqualTo(request.email)
         assertThat(found.get().name).isEqualTo(request.name)
-        assertThat(found.get().password).isNotEqualTo(request.password) // 암호화 확인
+        assertThat(found.get().password).isNotEqualTo(request.password)
     }
 }

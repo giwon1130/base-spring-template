@@ -14,6 +14,7 @@
 - 공통 예외 처리와 표준 응답 포맷
 - Flyway 기반 데이터베이스 마이그레이션
 - Docker Compose 기반 로컬 실행 환경
+- Gradle Wrapper 포함 및 Testcontainers 기반 통합 테스트
 
 ## 기술 스택
 - Kotlin 1.9.x

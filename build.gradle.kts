@@ -88,6 +88,9 @@ tasks.withType<KotlinCompile> {
 
 tasks.withType<Test> {
     useJUnitPlatform()
+    val dockerApiVersion = System.getProperty("api.version") ?: "1.44"
+    systemProperty("api.version", dockerApiVersion)
+    environment("DOCKER_API_VERSION", dockerApiVersion)
 }
 
 allOpen {
