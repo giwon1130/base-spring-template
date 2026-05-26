@@ -28,5 +28,13 @@
 ## 사용 목적
 - Spring Boot 기반 서비스의 초기 세팅 비용을 줄이고, 반복되는 인프라 코드를 빠르게 시작하기 위한 템플릿
 
+## 사용 예
+이 템플릿의 패턴(controller → service → parser → repository 레이어, 공통 응답/예외 포맷, JWT 인증 골격 등)을 따르는 개인 백엔드 라인업:
+
+- `giwon-home-api` — 공개 프로필/프로젝트 카탈로그 API
+- `signal-desk-api` — 시장 데이터·합성 위험도 API (PostgreSQL/Railway)
+- `baby-log-api` — 육아 기록·실시간 가족 공유·일일 요약 API (PostgreSQL/Railway)
+- `codie-api` — 옷장·날씨·TPO 기반 코디 추천 API
+
 ## 메모
-이 저장소는 비즈니스 로직보다 플랫폼 공통 기능을 빠르게 시작하기 위한 베이스 템플릿 저장소입니다.
+이 저장소는 비즈니스 로직보다 플랫폼 공통 기능을 빠르게 시작하기 위한 베이스 템플릿 저장소입니다. 신규 백엔드 시작 시 이 패턴을 복사해 도메인만 갈아끼우는 흐름.
